@@ -1,0 +1,40 @@
+<data>
+
+        <!-- Teacher View -->
+        <record model="ir.ui.view" id="view_teacher_form">
+            <field name="name">teacher.form</field>
+            <field name="model">teacher</field>
+            <field name="arch" type="xml">
+                <!-- Define the teacher form view here -->
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="classe_ids"/>
+                            <field name="partner_id"/>
+                            <field name="email"/>
+                            <field name="phone"/>
+                            <field name="active"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Teacher Tree View -->
+        <record model="ir.ui.view" id="view_teacher_tree">
+            <field name="name">teacher.tree</field>
+            <field name="model">teacher</field>
+            <field name="arch" type="xml">
+                <list>
+                    <field name="name"/>
+                    <field name="classe_ids"/>
+                    <field name="partner_id"/>
+                    <field name="email"/>
+                    <field name="phone"/>
+                    <field name="active"/>
+                </list>
+            </field>
+        </record>
+
+    </data>

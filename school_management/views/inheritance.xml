@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Invoice Form View -->
+        <record id="invoice_form_inherit_student" model="ir.ui.view">
+            <field name="name">account.move.form.inherit.student</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='partner_id']" position="after">
+                    <field name="is_tuition_fee" invisible="context.get('move_type') != 'out_invoice'"/>
+                    <field name="student_id" invisible="not is_tuition_fee" required="is_tuition_fee"/>
+                    <field name="semester" invisible="not is_tuition_fee" required="is_tuition_fee"/>
+                </xpath>
+                <xpath expr="//notebook" position="inside">
+                    <page string="Student Information" invisible="not is_tuition_fee">
+                        <group>
+                            <group>
+                                <field name="student_id" readonly="1"/>
+                                <field name="semester" readonly="1"/>
+                            </group>
+                            <group>
+                                <field name="student_classe_id" string="Class" readonly="1"/>
+                                <field name="student_age" string="Age" readonly="1"/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Sale Order Form View -->
+        <record id="sale_order_form_inherit_school" model="ir.ui.view">
+            <field name="name">sale.order.form.inherit.school</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='partner_id']" position="after">
+                    <field name="is_school_material"/>
+                    <field name="classe_id" invisible="not is_school_material"/>
+                </xpath>
+                <xpath expr="//notebook" position="inside">
+                    <page string="Students" invisible="not is_school_material">
+                        <field name="student_ids" widget="many2many_tags"/>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Menu Items -->
+        <!-- Action for Tuition Fee Invoices -->
+        <record id="action_tuition_fee_invoices" model="ir.actions.act_window">
+            <field name="name">Tuition Fee Invoices</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">account.move</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('move_type', '=', 'out_invoice'), ('is_tuition_fee', '=', True)]</field>
+            <field name="context">{'default_move_type': 'out_invoice', 'default_is_tuition_fee': True}</field>
+        </record>
+
+        <!-- Action for School Material Sale Orders -->
+        <record id="action_school_material_orders" model="ir.actions.act_window">
+            <field name="name">School Material Orders</field>
+            <field name="res_model">sale.order</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('is_school_material', '=', True)]</field>
+            <field name="context">{'default_is_school_material': True}</field>
+        </record>
+
+        <!-- Parent Menu -->
+        <menuitem id="menu_school_management_root" parent="main_menu" name="School Management" />
+
+        <!-- Submenu for Tuition Fee Invoices -->
+        <menuitem id="menu_tuition_fee_invoices"
+                  name="Tuition Fee Invoices"
+                  parent="menu_school_management_root"
+                  action="action_tuition_fee_invoices"
+                  sequence="10"/>
+
+        <!-- Submenu for School Material Orders -->
+        <menuitem id="menu_school_material_orders"
+                  name="School Material Orders"
+                  parent="menu_school_management_root"
+                  action="action_school_material_orders"
+                  sequence="20"/>
+    </data>
+</odoo>
