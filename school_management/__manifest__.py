@@ -9,6 +9,9 @@
         # Base dependencies
         'base',
 
+        # HR module - new dependency
+        'hr',
+
         # Required for account.move (invoice) inheritance
         'account',
         # Required for sale.order inheritance
@@ -30,4 +33,15 @@
     'installable': True,
     'auto_install': False,
     'license': 'LGPL-3',
+    'application': True,
+    'description': """
+School Management System
+=======================
+This module extends the HR functionality to create a complete school management system.
+Features include:
+- Teacher management integrated with HR employees
+- Student management
+- Class organization
+- Academic records
+"""
 }
