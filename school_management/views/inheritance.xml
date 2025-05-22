@@ -1,6 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+
+        <!-- HR Employee Form View Inheritance -->
+        <record id="hr_employee_form_inherit_school" model="ir.ui.view">
+            <field name="name">hr.employee.form.inherit.school</field>
+            <field name="model">hr.employee</field>
+            <field name="inherit_id" ref="hr.view_employee_form"/>
+            <field name="arch" type="xml">
+                <!-- Add to the main information group -->
+                <xpath expr="//page[@name='public']//div[@id='o_work_employee_main']" position="inside">
+                    <group string="School Information">
+                        <field name="is_teacher"/>
+                    </group>
+                </xpath>
+
+                <!-- Alternative: Add to a new page in the notebook -->
+                <xpath expr="//notebook" position="inside">
+                    <page string="School Information" name="school_info">
+                        <group>
+                            <group>
+                                <field name="is_teacher"/>
+                            </group>
+                            <group>
+                                <field name="teacher_id"/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- HR Employee Tree View Inheritance -->
+        <record id="hr_employee_tree_inherit_school" model="ir.ui.view">
+            <field name="name">hr.employee.tree.inherit.school</field>
+            <field name="model">hr.employee</field>
+            <field name="inherit_id" ref="hr.view_employee_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='work_email']" position="after">
+                    <field name="is_teacher" optional="show"/>
+                </xpath>
+            </field>
+        </record>
         <!-- Invoice Form View -->
         <record id="invoice_form_inherit_student" model="ir.ui.view">
             <field name="name">account.move.form.inherit.student</field>
@@ -69,7 +110,7 @@
         </record>
 
         <!-- Parent Menu -->
-        <menuitem id="menu_school_management_root" parent="main_menu" name="School Management" />
+        <menuitem id="menu_school_management_root" parent="main_menu" name="School Management"/>
 
         <!-- Submenu for Tuition Fee Invoices -->
         <menuitem id="menu_tuition_fee_invoices"

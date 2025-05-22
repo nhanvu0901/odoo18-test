@@ -99,3 +99,25 @@ class SaleOrderInheritance(models.Model):
 
         # Call the original method
         return super(SaleOrderInheritance, self).action_confirm()
+
+
+class HrEmployeeInherit(models.Model):
+    """Extend the hr.employee model to add school-specific fields"""
+    _inherit = 'hr.employee'
+
+    # You can add other school-related fields here
+    is_teacher = fields.Boolean(
+        string='Is Teacher',
+        default=False,
+        help='Check if this employee is a teacher'
+    )
+    teacher_id = fields.One2many(
+        'teacher',
+        'employee_id',
+        string='Teacher Record'
+    )
+
+    @api.depends('teacher_id')
+    def _compute_is_teacher(self):
+        for employee in self:
+            employee.is_teacher = bool(employee.teacher_id)
