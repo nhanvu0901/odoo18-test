@@ -3,3 +3,4 @@ access_student,access_student,model_student,base.group_user,1,1,1,1
 access_teacher,access_teacher,model_teacher,base.group_user,1,1,1,1
 access_classe,access_classe,model_classe,base.group_user,1,1,1,1
 access_school_subject,access_school_subject,model_school_subject,base.group_user,1,1,1,1
+access_classe_assign_teacher_wizard,access_classe_assign_teacher_wizard,model_classe_assign_teacher_wizard,base.group_user,1,1,1,1

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Simplified Wizard View for Assigning Classes to Teacher -->
+    <record id="view_teacher_assign_class_wizard" model="ir.ui.view">
+        <field name="name">teacher.assign.class.wizard.form</field>
+        <field name="model">teacher.assign.class.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Assign Classes to Teacher">
+                <sheet>
+                    <group>
+                        <field name="teacher_id"/>
+                    </group>
+
+                    <group string="Select Classes to Assign">
+                        <field name="class_ids" widget="many2many_checkboxes" nolabel="1"/>
+                    </group>
+                </sheet>
+
+                <footer>
+                    <button name="action_confirm_assignment"
+                            string="Assign Selected Classes"
+                            type="object"
+                            class="btn-primary"/>
+                    <button string="Cancel"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Simplified Wizard View for Assigning Teacher to Class -->
+    <record id="view_classe_assign_teacher_wizard" model="ir.ui.view">
+        <field name="name">classe.assign.teacher.wizard.form</field>
+        <field name="model">classe.assign.teacher.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Assign Teacher to Class">
+                <sheet>
+                    <group>
+                        <field name="classe_id"/>
+                        <field name="current_teacher_id" invisible="current_teacher_id == False"/>
+                        <field name="teacher_id"/>
+                    </group>
+                </sheet>
+
+                <footer>
+                    <button name="action_confirm_assignment"
+                            string="Assign Teacher"
+                            type="object"
+                            class="btn-primary"/>
+                    <button string="Cancel"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Enhanced Class Tree View with Teacher Assignment -->
+    <record id="view_classe_tree_enhanced" model="ir.ui.view">
+        <field name="name">classe.tree.enhanced</field>
+        <field name="model">classe</field>
+        <field name="arch" type="xml">
+            <list string="Classes">
+                <field name="class_name"/>
+                <field name="teacher_id"/>
+                <field name="capacity"/>
+                <field name="room"/>
+                <field name="student_count"/>
+                <button name="action_assign_teacher"
+                        string="Assign Teacher"
+                        type="object"
+                        class="btn-link"
+                        invisible="teacher_id != False"/>
+                <button name="action_unassign_teacher"
+                        string="Unassign"
+                        type="object"
+                        class="btn-link"
+                        invisible="teacher_id == False"
+                        confirm="Are you sure you want to unassign the teacher from this class?"/>
+            </list>
+        </field>
+    </record>
+</odoo>

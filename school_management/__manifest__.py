@@ -28,6 +28,7 @@
         'views/classe_view.xml',
         'views/wizard.xml',
         'views/inheritance.xml',
+        'views/class_assigment_wizard.xml'
     ],
     'demo': [],
     'installable': True,

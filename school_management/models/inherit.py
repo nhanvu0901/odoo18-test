@@ -102,22 +102,42 @@ class SaleOrderInheritance(models.Model):
 
 
 class HrEmployeeInherit(models.Model):
-    """Extend the hr.employee model to add school-specific fields"""
+
     _inherit = 'hr.employee'
 
-    # You can add other school-related fields here
+
     is_teacher = fields.Boolean(
         string='Is Teacher',
-        default=False,
-        help='Check if this employee is a teacher'
+        compute='_compute_is_teacher',
+        store=True,
+        help='Automatically checked if this employee has a teacher record'
     )
-    teacher_id = fields.One2many(
+    teacher_id = fields.Many2one(
         'teacher',
-        'employee_id',
-        string='Teacher Record'
+        string='Teacher Record',
+        compute='_compute_teacher_id',
+        store=True,
+        help='Teacher record associated with this employee'
     )
+
+    def _compute_teacher_id(self):
+        for employee in self:
+            if employee.id:
+                teacher = self.env['teacher'].search([('employee_id', '=', employee.id)], limit=1)
+                employee.teacher_id = teacher.id if teacher else False
+            else:
+                employee.teacher_id = False
 
     @api.depends('teacher_id')
     def _compute_is_teacher(self):
+        """Automatically check is_teacher if teacher_id is found"""
         for employee in self:
             employee.is_teacher = bool(employee.teacher_id)
+            if employee.is_teacher:
+                _logger.info(
+                    f"Employee {employee.name} automatically marked as teacher (Teacher ID: {employee.teacher_id.id})")
+
+    def update_teacher_fields(self):
+        """Manual method to update teacher-related fields"""
+        self._compute_teacher_id()
+        self._compute_is_teacher()

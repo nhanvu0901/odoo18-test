@@ -15,6 +15,7 @@
                             <field name="teacher_id"/>
                             <field name="classe_id"/>
                             <field name="bdate"/>
+                            <field name="student_age"/>
                             <field name="stage"/>
                         </group>
                     </group>

@@ -7,12 +7,51 @@
         <field name="arch" type="xml">
             <list string="Teachers">
                 <field name="name"/>
-                <!-- Add only direct fields of the teacher model -->
                 <field name="employee_id" optional="show"/>
                 <field name="phone" optional="show"/>
                 <field name="email" optional="show"/>
+                <field name="qualification" optional="hide"/>
+                <field name="academic_degree" optional="hide"/>
+                <field name="classes_count" string="Classes"/>
             </list>
         </field>
+    </record>
+
+    <!-- Custom Tree View for Teacher's Classes -->
+    <record id="view_teacher_classes_tree" model="ir.ui.view">
+        <field name="name">teacher.classes.tree</field>
+        <field name="model">classe</field>
+        <field name="arch" type="xml">
+            <list string="Assigned Classes" create="false" edit="false" delete="false">
+                <field name="class_name"/>
+                <field name="capacity"/>
+                <field name="room"/>
+                <field name="student_count"/>
+                <button name="action_unassign_teacher"
+                        string="Unassign"
+                        type="object"
+                        class="btn-link"
+                        confirm="Are you sure you want to unassign the teacher from this class?"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Action for Teacher's Classes -->
+    <!--    active_id-->
+    <!--This is a special built-in variable in Odoo that automatically contains the ID of the current record being viewed when an action is triggered.-->
+    <!--Flow:-->
+    <!--User opens a Teacher form (e.g., Teacher with ID = 5)-->
+    <!--User clicks "View Assigned Classes" button-->
+    <!--active_id automatically becomes 5 (the current teacher's ID)-->
+    <!--teacher_id is the ref from classe-->
+    <record id="action_teacher_classes" model="ir.actions.act_window">
+        <field name="name">Teacher's Classes</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">classe</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_teacher_classes_tree"/>
+        <field name="domain">[('teacher_id', '=', active_id)]</field>
+        <field name="context">{'teacher_id': active_id}</field>
     </record>
 
     <!-- Simple Form View for Teachers -->
@@ -33,15 +72,43 @@
                             <field name="phone"/>
                             <field name="email"/>
                             <field name="qualification"/>
-                            <field name="years_of_experience" widget="integer"/>
+                            <field name="years_of_experience"/>
                         </group>
                         <group>
                             <field name="academic_degree"/>
+                            <field name="classes_count" string="Total Classes" readonly="1"/>
                         </group>
                     </group>
+
                     <notebook>
-                        <page string="Classes" name="classes">
-                            <field name="classe_ids"/>
+                        <page string="Assigned Classes" name="classes">
+                            <div class="o_form_label">
+                                <strong>Classes assigned to this teacher:</strong>
+                            </div>
+
+                            <!-- Action buttons -->
+                            <div class="row mt16">
+                                <div class="col-12">
+                                    <button name="%(action_teacher_classes)d"
+                                            string="View Assigned Classes"
+                                            type="action"
+                                            class="btn-primary mr8"/>
+
+                                    <button name="action_assign_classes"
+                                            string="Assign New Classes"
+                                            type="object"
+                                            class="btn-secondary"/>
+                                </div>
+                            </div>
+                        </page>
+
+                        <page string="Subjects &amp; Certifications" name="subjects_certs">
+                            <group>
+                                <group string="Subjects">
+                                    <field name="subject_ids" widget="many2many_tags"/>
+                                </group>
+
+                            </group>
                         </page>
                     </notebook>
                 </sheet>
@@ -49,7 +116,7 @@
         </field>
     </record>
 
-    <!-- Action -->
+    <!-- Main Action -->
     <record id="action_teacher" model="ir.actions.act_window">
         <field name="name">Teachers</field>
         <field name="type">ir.actions.act_window</field>
