@@ -51,10 +51,12 @@ class Teacher(models.Model):
         help='Employee linked to this teacher'
     )
 
-    classe_ids = fields.One2many(
-        comodel_name='classe',
-        inverse_name='teacher_id',
-        string='Assigned Classes'
+    classe_ids = fields.Many2many(
+        'classe',
+        'teacher_class_rel',  # relation table name
+        'teacher_id',         # column for this model
+        'class_id',          # column for the other model
+        string='Classes'
     )
 
     qualification = fields.Char(string='Qualification')
@@ -155,10 +157,9 @@ class Teacher(models.Model):
             'type': 'ir.actions.act_window',
             'res_model': 'classe',
             'view_mode': 'list,form',
-            'domain': [('teacher_id', '=', self.id)],
+            'domain': [('teacher_ids', 'in', [self.id])],  # Now this matches the field name
             'context': {
-                'default_teacher_id': self.id,
-                'teacher_id': self.id,
+                'default_teacher_ids': [(4, self.id)],
             },
             'target': 'current',
         }
@@ -166,7 +167,9 @@ class Teacher(models.Model):
     def action_unassign_all_classes(self):
         """Unassign all classes from this teacher."""
         self.ensure_one()
-        self.classe_ids.write({'teacher_id': False})
+        # Update to use Many2many commands
+        for classe in self.classe_ids:
+            classe.teacher_ids = [(3, self.id)]  # Unlink this teacher from each class
         return {
             'type': 'ir.actions.client',
             'tag': 'reload',
@@ -193,22 +196,30 @@ class TeacherAssignClassWizard(models.TransientModel):
 
     @api.model
     def default_get(self, fields_list):
-        """Set default available classes (unassigned classes only)"""
+
         result = super(TeacherAssignClassWizard, self).default_get(fields_list)
         if 'class_ids' in fields_list:
-            available_classes = self.env['classe'].search([('teacher_id', '=', False)])
+            teacher_id = self.env.context.get('default_teacher_id')
+            if teacher_id:
+                teacher = self.env['teacher'].browse(teacher_id)
+
+                available_classes = self.env['classe'].search([
+                    ('id', 'not in', teacher.classe_ids.ids)
+                ])
+            else:
+                available_classes = self.env['classe'].search([])
             result['class_ids'] = [(6, 0, available_classes.ids)]
         return result
 
     def action_confirm_assignment(self):
-        """Assigns the selected classes to the teacher."""
+        """Assigns the selected classes to the teacher using Many2many relationship."""
         self.ensure_one()
         if self.class_ids:
-            self.class_ids.write({'teacher_id': self.teacher_id.id})
+            for classe in self.class_ids:
+                classe.teacher_ids = [(4, self.teacher_id.id)]  # Now this matches the field name
         return {'type': 'ir.actions.act_window_close'}
 
 
-# Simplified Wizard for assigning teacher to class
 class ClasseAssignTeacherWizard(models.TransientModel):
     _name = 'classe.assign.teacher.wizard'
     _description = 'Wizard to Assign Teacher to a Class'
@@ -227,17 +238,16 @@ class ClasseAssignTeacherWizard(models.TransientModel):
         required=True
     )
 
-    current_teacher_id = fields.Many2one(
+    current_teacher_ids = fields.Many2many(
         'teacher',
-        string="Current Teacher",
-        related='classe_id.teacher_id',
+        string="Current Teachers",
+        related='classe_id.teacher_ids',
         readonly=True
     )
 
     def action_confirm_assignment(self):
         """Assigns the selected teacher to the class."""
         self.ensure_one()
-        self.classe_id.teacher_id = self.teacher_id.id
+        # Add teacher to the class using Many2many command
+        self.classe_id.teacher_ids = [(4, self.teacher_id.id)]
         return {'type': 'ir.actions.act_window_close'}
-
-# Note: Classe model enhancements should be added to classe.py file to avoid loading order issues

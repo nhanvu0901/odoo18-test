@@ -29,33 +29,6 @@
         </field>
     </record>
 
-    <!-- Simplified Wizard View for Assigning Teacher to Class -->
-    <record id="view_classe_assign_teacher_wizard" model="ir.ui.view">
-        <field name="name">classe.assign.teacher.wizard.form</field>
-        <field name="model">classe.assign.teacher.wizard</field>
-        <field name="arch" type="xml">
-            <form string="Assign Teacher to Class">
-                <sheet>
-                    <group>
-                        <field name="classe_id"/>
-                        <field name="current_teacher_id" invisible="current_teacher_id == False"/>
-                        <field name="teacher_id"/>
-                    </group>
-                </sheet>
-
-                <footer>
-                    <button name="action_confirm_assignment"
-                            string="Assign Teacher"
-                            type="object"
-                            class="btn-primary"/>
-                    <button string="Cancel"
-                            class="btn-secondary"
-                            special="cancel"/>
-                </footer>
-            </form>
-        </field>
-    </record>
-
     <!-- Enhanced Class Tree View with Teacher Assignment -->
     <record id="view_classe_tree_enhanced" model="ir.ui.view">
         <field name="name">classe.tree.enhanced</field>
@@ -63,7 +36,7 @@
         <field name="arch" type="xml">
             <list string="Classes">
                 <field name="class_name"/>
-                <field name="teacher_id"/>
+                <field name="teacher_ids" widget="many2many_tags" string="Teachers"/>
                 <field name="capacity"/>
                 <field name="room"/>
                 <field name="student_count"/>
@@ -71,13 +44,12 @@
                         string="Assign Teacher"
                         type="object"
                         class="btn-link"
-                        invisible="teacher_id != False"/>
+                        invisible="teacher_ids"/>
                 <button name="action_unassign_teacher"
-                        string="Unassign"
+                        string="Manage Teachers"
                         type="object"
                         class="btn-link"
-                        invisible="teacher_id == False"
-                        confirm="Are you sure you want to unassign the teacher from this class?"/>
+                        invisible="not teacher_ids"/>
             </list>
         </field>
     </record>

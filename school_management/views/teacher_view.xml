@@ -17,44 +17,17 @@
         </field>
     </record>
 
-    <!-- Custom Tree View for Teacher's Classes -->
-    <record id="view_teacher_classes_tree" model="ir.ui.view">
-        <field name="name">teacher.classes.tree</field>
-        <field name="model">classe</field>
-        <field name="arch" type="xml">
-            <list string="Assigned Classes" create="false" edit="false" delete="false">
-                <field name="class_name"/>
-                <field name="capacity"/>
-                <field name="room"/>
-                <field name="student_count"/>
-                <button name="action_unassign_teacher"
-                        string="Unassign"
-                        type="object"
-                        class="btn-link"
-                        confirm="Are you sure you want to unassign the teacher from this class?"/>
-            </list>
-        </field>
-    </record>
-
-    <!-- Action for Teacher's Classes -->
-    <!--    active_id-->
-    <!--This is a special built-in variable in Odoo that automatically contains the ID of the current record being viewed when an action is triggered.-->
-    <!--Flow:-->
-    <!--User opens a Teacher form (e.g., Teacher with ID = 5)-->
-    <!--User clicks "View Assigned Classes" button-->
-    <!--active_id automatically becomes 5 (the current teacher's ID)-->
-    <!--teacher_id is the ref from classe-->
+    <!-- Action for Teacher's Classes - DEFINE THIS FIRST -->
     <record id="action_teacher_classes" model="ir.actions.act_window">
         <field name="name">Teacher's Classes</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">classe</field>
         <field name="view_mode">list</field>
-        <field name="view_id" ref="view_teacher_classes_tree"/>
-        <field name="domain">[('teacher_id', '=', active_id)]</field>
-        <field name="context">{'teacher_id': active_id}</field>
+        <field name="domain">[('teacher_ids', 'in', [active_id])]</field>
+        <field name="context">{'default_teacher_ids': [(4, active_id)]}</field>
     </record>
 
-    <!-- Simple Form View for Teachers -->
+    <!-- Simple Form View for Teachers - DEFINE AFTER THE ACTION -->
     <record id="view_teacher_form" model="ir.ui.view">
         <field name="name">teacher.form</field>
         <field name="model">teacher</field>
@@ -107,7 +80,6 @@
                                 <group string="Subjects">
                                     <field name="subject_ids" widget="many2many_tags"/>
                                 </group>
-
                             </group>
                         </page>
                     </notebook>
@@ -124,6 +96,60 @@
         <field name="view_mode">list,form</field>
     </record>
 
+
+
+    <record id="view_teacher_assign_class_wizard" model="ir.ui.view">
+        <field name="name">teacher.assign.class.wizard.form</field>
+        <field name="model">teacher.assign.class.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Assign Classes to Teacher">
+                <sheet>
+                    <group>
+                        <field name="teacher_id"/>
+                    </group>
+
+                    <group string="Select Classes to Assign">
+                        <field name="class_ids" widget="many2many_checkboxes" nolabel="1"/>
+                    </group>
+                </sheet>
+
+                <footer>
+                    <button name="action_confirm_assignment"
+                            string="Assign Selected Classes"
+                            type="object"
+                            class="btn-primary"/>
+                    <button string="Cancel"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Enhanced Class Tree View with Teacher Assignment -->
+    <record id="view_classe_tree_enhanced" model="ir.ui.view">
+        <field name="name">classe.tree.enhanced</field>
+        <field name="model">classe</field>
+        <field name="arch" type="xml">
+            <list string="Classes">
+                <field name="class_name"/>
+                <field name="teacher_ids" widget="many2many_tags" string="Teachers"/>
+                <field name="capacity"/>
+                <field name="room"/>
+                <field name="student_count"/>
+                <button name="action_assign_teacher"
+                        string="Assign Teacher"
+                        type="object"
+                        class="btn-link"
+                        invisible="teacher_ids"/>
+                <button name="action_unassign_teacher"
+                        string="Manage Teachers"
+                        type="object"
+                        class="btn-link"
+                        invisible="not teacher_ids"/>
+            </list>
+        </field>
+    </record>
     <!-- Menu Item -->
     <menuitem id="menu_teacher"
               name="Teachers"

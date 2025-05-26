@@ -11,7 +11,6 @@ class Student(models.Model):
     classe_id = fields.Many2one(
         comodel_name="classe",
         string="Classe",
-        domain="[('teacher_id', '=', teacher_id)]"
     )
 
     bdate = fields.Date(string='Date Of Birth')
@@ -34,21 +33,21 @@ class Student(models.Model):
             else:
                 stud.student_age = 0.0
 
-    @api.onchange('teacher_id')
-    def _onchange_teacher_id(self):
-        """
-        Update the domain of classe_id based on the selected teacher_id.
-        If teacher_id is set, filter classes to those taught by the teacher.
-        If teacher_id is not set, allow all classes.
-        """
-        if self.teacher_id:
-            return {
-                'domain': {
-                    'classe_id': [('teacher_id', '=', self.teacher_id.id)]
-                }
-            }
-        return {
-            'domain': {
-                'classe_id': []  # No filter if no teacher is selected
-            }
-        }
+    # @api.onchange('teacher_id')
+    # def _onchange_teacher_id(self):
+    #     """
+    #     Update the domain of classe_id based on the selected teacher_id.
+    #     If teacher_id is set, filter classes to those taught by the teacher.
+    #     If teacher_id is not set, allow all classes.
+    #     """
+    #     if self.teacher_id:
+    #         return {
+    #             'domain': {
+    #                 'classe_id': [('teacher_id', 'in', self.teacher_id.id)]
+    #             }
+    #         }
+    #     return {
+    #         'domain': {
+    #             'classe_id': []  # No filter if no teacher is selected
+    #         }
+    #     }
