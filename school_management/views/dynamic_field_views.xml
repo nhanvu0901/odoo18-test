@@ -1,0 +1,178 @@
+<!-- views/dynamic_field_views.xml -->
+<odoo>
+    <!-- Dynamic Field Definition Views -->
+    <record id="view_dynamic_field_definition_tree" model="ir.ui.view">
+        <field name="name">dynamic.field.definition.tree</field>
+        <field name="model">dynamic.field.definition</field>
+        <field name="type">list</field>
+        <field name="arch" type="xml">
+            <list string="Dynamic Fields">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="label"/>
+                <field name="field_type"/>
+                <field name="target_model"/>
+                <field name="required"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dynamic_field_definition_form" model="ir.ui.view">
+        <field name="name">dynamic.field.definition.form</field>
+        <field name="model">dynamic.field.definition</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form string="Dynamic Field Definition">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="label"/>
+                            <field name="field_type"/>
+                            <field name="target_model"/>
+                        </group>
+                        <group>
+                            <field name="required"/>
+                            <field name="active"/>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+                    <group string="Field Options" invisible="field_type != 'selection'">
+                        <field name="selection_options" placeholder="Option 1&#10;Option 2&#10;Option 3"/>
+                    </group>
+                    <group string="Help">
+                        <field name="help_text" placeholder="Help text for users"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Dynamic Field Wizard Views -->
+    <record id="view_dynamic_field_wizard_form" model="ir.ui.view">
+        <field name="name">dynamic.field.wizard.form</field>
+        <field name="model">dynamic.field.wizard</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form string="Create Dynamic Field">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Create New Dynamic Field</h1>
+                        <p>Define a new field that will be automatically added to the selected model's form view.</p>
+                    </div>
+
+                    <group>
+                        <group string="Basic Information">
+                            <field name="name" placeholder="e.g., employee_level"/>
+                            <field name="label" placeholder="e.g., Employee Level"/>
+                            <field name="target_model"/>
+                        </group>
+                        <group string="Field Configuration">
+                            <field name="field_type"/>
+                            <field name="required"/>
+                        </group>
+                    </group>
+
+                    <group string="Selection Options" invisible="field_type != 'selection'">
+                        <field name="selection_options" nolabel="1" placeholder="Junior&#10;Senior&#10;Manager&#10;Director"/>
+                        <p class="text-muted">Enter one option per line for dropdown fields.</p>
+                    </group>
+
+                    <group string="Additional Settings">
+                        <field name="help_text" placeholder="Optional help text for users"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_create_field" type="object" string="Create Field" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_dynamic_field_definition" model="ir.actions.act_window">
+        <field name="name">Dynamic Fields</field>
+        <field name="res_model">dynamic.field.definition</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first dynamic field!
+            </p>
+            <p>
+                Dynamic fields allow you to add custom fields to forms without modifying code.
+                Use the "Create Field" button to get started.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_dynamic_field_wizard" model="ir.actions.act_window">
+        <field name="name">Create Dynamic Field</field>
+        <field name="res_model">dynamic.field.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="menu_dynamic_fields_root"
+              name="Dynamic Fields"
+              sequence="100"/>
+
+    <menuitem id="menu_dynamic_field_definition"
+              name="Manage Fields"
+              parent="menu_dynamic_fields_root"
+              action="action_dynamic_field_definition"
+              sequence="10"/>
+
+    <menuitem id="menu_dynamic_field_wizard"
+              name="Create New Field"
+              parent="menu_dynamic_fields_root"
+              action="action_dynamic_field_wizard"
+              sequence="20"/>
+
+    <!-- Add button to Employee form to create fields quickly -->
+    <record id="hr_employee_form_inherit_dynamic" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.dynamic</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="%(action_dynamic_field_wizard)d"
+                        type="action"
+                        string="Add Dynamic Field"
+                        class="btn btn-secondary"
+                        groups="hr.group_hr_manager"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Data View for Dynamic Field Data (for debugging) -->
+    <record id="view_dynamic_field_data_tree" model="ir.ui.view">
+        <field name="name">dynamic.field.data.tree</field>
+        <field name="model">dynamic.field.data</field>
+        <field name="type">list</field>
+        <field name="arch" type="xml">
+            <list string="Dynamic Field Data">
+                <field name="model_name"/>
+                <field name="record_id"/>
+                <field name="field_name"/>
+                <field name="field_value"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_dynamic_field_data" model="ir.actions.act_window">
+        <field name="name">Dynamic Field Data</field>
+        <field name="res_model">dynamic.field.data</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <menuitem id="menu_dynamic_field_data"
+              name="Field Data (Debug)"
+              parent="menu_dynamic_fields_root"
+              action="action_dynamic_field_data"
+              sequence="30"
+              groups="base.group_system"/>
+
+</odoo>

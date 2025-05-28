@@ -3,4 +3,11 @@ access_student,access_student,model_student,base.group_user,1,1,1,1
 access_teacher,access_teacher,model_teacher,base.group_user,1,1,1,1
 access_classe,access_classe,model_classe,base.group_user,1,1,1,1
 access_school_subject,access_school_subject,model_school_subject,base.group_user,1,1,1,1
+
+access_student_teacher,access.student.teacher,model_student,school_management.group_school_teacher,1,1,0,0
+access_teacher_teacher,access.teacher.teacher,model_teacher,school_management.group_school_teacher,1,1,0,0
+access_classe_teacher,access.classe.teacher,model_classe,school_management.group_school_teacher,1,1,0,0
+access_school_subject_teacher,access.school_subject.teacher,model_school_subject,school_management.group_school_teacher,1,1,0,0
+
 access_teacher_assign_class_wizard,access_teacher_assign_class_wizard,model_teacher_assign_class_wizard,base.group_user,1,1,1,1
+access_hr_employee_public_school,access_hr_employee_public_school,hr.model_hr_employee_public,base.group_user,1,0,0,0

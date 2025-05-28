@@ -22,12 +22,14 @@
     ],
     'data': [
         'views/menu.xml',
+        'security/security.xml',
         'security/ir.model.access.csv',
         'views/teacher_view.xml',
         'views/student_view.xml',
         'views/classe_view.xml',
         'views/wizard.xml',
         'views/inheritance.xml',
+        'views/dynamic_field_views.xml',
 
     ],
     'demo': [],

@@ -54,8 +54,8 @@ class Teacher(models.Model):
     classe_ids = fields.Many2many(
         'classe',
         'teacher_class_rel',  # relation table name
-        'teacher_id',         # column for this model
-        'class_id',          # column for the other model
+        'teacher_id',  # column for this model
+        'class_id',  # column for the other model
         string='Classes'
     )
 
@@ -110,6 +110,14 @@ class Teacher(models.Model):
         if teacher.employee_id:
             teacher.employee_id.update_teacher_fields()
         return teacher
+
+    def _get_current_teacher(self):
+        """Get the teacher record for the current user"""
+        employee = self.env['hr.employee'].search([('user_id', '=', self.env.user.id)], limit=1)
+        if employee:
+            teacher = self.search([('employee_id', '=', employee.id)], limit=1)
+            return teacher
+        return False
 
     def write(self, vals):
         old_employees = self.env['hr.employee']
@@ -189,34 +197,40 @@ class TeacherAssignClassWizard(models.TransientModel):
         default=lambda self: self.env.context.get('default_teacher_id')
     )
 
+    # Add a field to show currently assigned classes
+    current_class_ids = fields.Many2many(
+        'classe',
+        string="Currently Assigned Classes",
+        related='teacher_id.classe_ids',
+        readonly=True
+    )
+
+    # This field will be for all available classes
     class_ids = fields.Many2many(
         'classe',
-        string="Available Classes to Assign"
+        relation='wizard_class_assign_rel',  # Specify a custom relation to avoid conflicts
+        column1='wizard_id',
+        column2='class_id',
+        string="Classes to Assign"
     )
 
     @api.model
     def default_get(self, fields_list):
-
         result = super(TeacherAssignClassWizard, self).default_get(fields_list)
         if 'class_ids' in fields_list:
-            teacher_id = self.env.context.get('default_teacher_id')
-            if teacher_id:
-                teacher = self.env['teacher'].browse(teacher_id)
-
-                available_classes = self.env['classe'].search([
-                    ('id', 'not in', teacher.classe_ids.ids)
-                ])
-            else:
-                available_classes = self.env['classe'].search([])
-            result['class_ids'] = [(6, 0, available_classes.ids)]
+            # Get ALL classes using sudo
+            all_classes = self.env['classe'].sudo().search([])
+            result['class_ids'] = [(6, 0, all_classes.ids)]
         return result
 
     def action_confirm_assignment(self):
-        """Assigns the selected classes to the teacher using Many2many relationship."""
+        """Assigns the selected classes to the teacher."""
         self.ensure_one()
         if self.class_ids:
-            for classe in self.class_ids:
-                classe.teacher_ids = [(4, self.teacher_id.id)]  # Now this matches the field name
+            # Use a clean write to replace all assignments
+            self.teacher_id.sudo().write({
+                'classe_ids': [(6, 0, self.class_ids.ids)]
+            })
         return {'type': 'ir.actions.act_window_close'}
 
 

@@ -108,8 +108,13 @@
                         <field name="teacher_id"/>
                     </group>
 
+                    <group string="Currently Assigned Classes" invisible="current_class_ids == []">
+                        <field name="current_class_ids" widget="many2many_tags" nolabel="1"/>
+                    </group>
+
                     <group string="Select Classes to Assign">
-                        <field name="class_ids" widget="many2many_checkboxes" nolabel="1"/>
+                        <field name="class_ids" widget="many2many_checkboxes" nolabel="1"
+                               options="{'no_create': True}"/>
                     </group>
                 </sheet>
 

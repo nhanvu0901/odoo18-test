@@ -15,6 +15,14 @@
                     </group>
                 </xpath>
 
+
+<!--                <xpath expr="//field[@name='coach_id']"-->
+<!--                       position="after">-->
+<!--                    <field name="is_teacher"/>-->
+<!--                    <field name="text"/>-->
+<!--                </xpath>-->
+
+
                 <!-- Alternative: Add to a new page in the notebook -->
                 <xpath expr="//notebook" position="inside">
                     <page string="School Information" name="school_info">

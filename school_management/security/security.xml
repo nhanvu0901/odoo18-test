@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Define category for school groups -->
+        <record id="module_category_school" model="ir.module.category">
+            <field name="name">School</field>
+            <field name="sequence">20</field>
+        </record>
+
+        <!-- School Teacher group -->
+        <record id="group_school_teacher" model="res.groups">
+            <field name="name">Teacher</field>
+            <field name="category_id" ref="module_category_school"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="comment">Teachers can access their own information and assigned classes</field>
+        </record>
+
+        <!-- School Manager group -->
+        <record id="group_school_manager" model="res.groups">
+            <field name="name">School Manager</field>
+            <field name="category_id" ref="module_category_school"/>
+            <field name="implied_ids" eval="[(4, ref('group_school_teacher'))]"/>
+            <field name="users" eval="[(4, ref('base.user_admin'))]"/>
+            <field name="comment">School managers can access all school information</field>
+        </record>
+
+        <!-- Record Rules -->
+        <!-- Teachers can only view their own teacher record -->
+        <record id="rule_teacher_own_record" model="ir.rule">
+            <field name="name">Teachers: own records only</field>
+            <field name="model_id" ref="model_teacher"/>
+            <field name="domain_force">[('employee_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+        </record>
+
+        <!-- Teachers can only view classes they are assigned to -->
+        <record id="rule_teacher_assigned_classes" model="ir.rule">
+            <field name="name">Teachers: assigned classes only</field>
+            <field name="model_id" ref="model_classe"/>
+            <field name="domain_force">['|', ('teacher_ids.employee_id.user_id', '=', user.id), ('teacher_ids', '=',
+                False)]
+            </field>
+            <field name="groups" eval="[(4, ref('group_school_teacher'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Managers can access everything -->
+        <record id="rule_school_manager_all_access" model="ir.rule">
+            <field name="name">School Manager: full access</field>
+            <field name="model_id" ref="model_teacher"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_school_manager'))]"/>
+        </record>
+    </data>
+</odoo>
