@@ -1,5 +1,5 @@
 {
-    'name': 'school_system',
+    'name': 'Hr manager',
     'version': '1.0.0',
     'category': 'human resources',
     'author': 'hr_saif',

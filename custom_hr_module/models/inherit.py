@@ -1,8 +1,5 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
-
-from odoo import models, fields, api
-from odoo.exceptions import ValidationError
 from lxml import etree
 import logging
 
@@ -13,19 +10,7 @@ class HrEmployeeInherit(models.Model):
 
     _inherit = 'hr.employee'
 
-    is_teacher = fields.Boolean(
-        string='Is Teacher',
-        compute='_compute_is_teacher',
-        store=True,
-        help='Automatically checked if this employee has a teacher record'
-    )
-    teacher_id = fields.Many2one(
-        'teacher',
-        string='Teacher Record',
-        compute='_compute_teacher_id',
-        store=True,
-        help='Teacher record associated with this employee'
-    )
+    text = fields.Char()
 
     @api.model
     def get_views(self, views, options=None):
@@ -47,7 +32,7 @@ class HrEmployeeInherit(models.Model):
             arch = etree.fromstring(form_view['arch'])
 
             # Get all custom fields defined in this model
-            custom_fields = self._get_custom_fields()
+            custom_fields = self._get_form_custom_fields()
 
             # Check if fields are already in the form to avoid duplicates
             existing_fields = self._get_existing_form_fields(arch)
@@ -77,22 +62,28 @@ class HrEmployeeInherit(models.Model):
 
         return form_view
 
-    def _get_custom_fields(self):
 
-        return self._get_form_custom_fields()
 
     def _get_form_custom_fields(self):
-        """Override this method to specify which custom fields to add to form"""
-        # Specify exactly which fields you want to add to the employee form
         custom_fields = [
-            'is_teacher'
+            'text'
         ]
+
+
         existing_fields = []
         for field_name in custom_fields:
             if field_name in self._fields:
                 existing_fields.append(field_name)
             else:
                 _logger.warning(f"Field '{field_name}' not found in model, skipping...")
+
+        # check in the dynamic.field.definition
+        custom_field_data = self.env['dynamic.field.definition'].search([])
+
+        if len(custom_field_data) > 0:
+            for field in custom_field_data:
+                if field.name not in custom_fields:
+                    existing_fields.append(field.name)
 
         return existing_fields
 
@@ -136,31 +127,8 @@ class HrEmployeeInherit(models.Model):
         # Insert the group after the insertion point
         parent.insert(insert_index, custom_group)
 
-    def _compute_teacher_id(self):
-        for employee in self:
-            if employee.id:
-                teacher = self.env['teacher'].search([('employee_id', '=', employee.id)], limit=1)
-                employee.teacher_id = teacher.id if teacher else False
-            else:
-                employee.teacher_id = False
-
-    @api.depends('teacher_id')
-    def _compute_is_teacher(self):
-        """Automatically check is_teacher if teacher_id is found"""
-        for employee in self:
-            employee.is_teacher = bool(employee.teacher_id)
-            if employee.is_teacher:
-                _logger.info(
-                    f"Employee {employee.name} automatically marked as teacher (Teacher ID: {employee.teacher_id.id})")
-
-    def update_teacher_fields(self):
-        """Manual method to update teacher-related fields"""
-        self._compute_teacher_id()
-        self._compute_is_teacher()
-
 
 class HrEmployeePublicInherit(models.Model):
     _inherit = 'hr.employee.public'
 
-    is_teacher = fields.Boolean(readonly=True)
-    teacher_id = fields.Many2one('teacher', string='Teacher Record', readonly=True)
+    text = fields.Char(readonly=True)
