@@ -232,45 +232,7 @@ class HrEmployeeInherit(models.Model):
             _logger.error(f"Error creating with dynamic fields: {e}")
             return super().create(vals_list)
 
-    @api.model
-    def fields_get(self, allfields=None, attributes=None):
-        """Override fields_get to include dynamic fields in field definitions"""
-        res = super().fields_get(allfields, attributes)
 
-        try:
-            # Add dynamic fields to the fields definition
-            dynamic_fields = self.env['dynamic.field.definition'].search([
-                ('target_model', '=', 'hr.employee'),
-                ('active', '=', True)
-            ])
-
-            for field_def in dynamic_fields:
-                field_name = field_def.name
-                if not allfields or field_name in allfields:
-                    field_info = {
-                        'type': field_def.field_type,
-                        'string': field_def.label,
-                        'required': field_def.required,
-                        'help': field_def.help_text or '',
-                        'readonly': False,
-                        'store': False,
-                    }
-
-                    # Add selection options if it's a selection field
-                    if field_def.field_type == 'selection' and field_def.selection_options:
-                        options = []
-                        for line in field_def.selection_options.split('\n'):
-                            line = line.strip()
-                            if line:
-                                options.append([line.lower().replace(' ', '_'), line])
-                        field_info['selection'] = options
-
-                    res[field_name] = field_info
-
-        except Exception as e:
-            _logger.error(f"Error in fields_get for dynamic fields: {e}")
-
-        return res
 
     @api.model
     def get_views(self, views, options=None):
@@ -286,15 +248,8 @@ class HrEmployeeInherit(models.Model):
                     ('active', '=', True)
                 ])
 
-                # Only inject fields if all defined fields exist on the model
-                all_fields_exist = True
-                for field_def in dynamic_fields:
-                    if field_def.name not in self._fields:
-                        all_fields_exist = False
-                        _logger.warning(f"Dynamic field '{field_def.name}' not found in model, form injection disabled")
-                        break
 
-                if all_fields_exist and dynamic_fields:
+                if dynamic_fields:
                     result['views']['form'] = self._inject_custom_fields_to_form(
                         result['views']['form']
                     )
@@ -325,35 +280,91 @@ class HrEmployeeInherit(models.Model):
             ]
 
             if fields_to_add:
-                # Double-check that all fields actually exist on the model before adding
-                verified_fields = []
-                for field_name in fields_to_add:
-                    if field_name in self._fields:
-                        verified_fields.append(field_name)
-                    else:
-                        _logger.warning(f"Skipping field '{field_name}' - not found in model._fields")
+                # NEW APPROACH: Check if field definitions exist instead of checking model._fields
+                valid_fields = []
 
-                if verified_fields:
+                # Get dynamic field definitions
+                dynamic_fields = self.env['dynamic.field.definition'].search([
+                    ('target_model', '=', 'hr.employee'),
+                    ('active', '=', True)
+                ])
+
+                defined_field_names = set(df.name for df in dynamic_fields)
+
+                for field_name in fields_to_add:
+                    # Check if it's a static field we know exists
+                    if field_name in ['text']:  # Add your static fields here
+                        valid_fields.append(field_name)
+                    # Check if it's a defined dynamic field
+                    elif field_name in defined_field_names:
+                        valid_fields.append(field_name)
+                    else:
+                        _logger.warning(f"Field '{field_name}' has no definition")
+
+                if valid_fields:
                     # Find insertion point
                     insertion_point = self._find_insertion_point(arch)
 
                     if insertion_point is not None:
                         # Create and insert the custom fields
-                        self._insert_fields_at_point(arch, insertion_point, verified_fields)
+                        self._insert_fields_at_point(arch, insertion_point, valid_fields)
 
                         # Update the form view architecture
                         form_view['arch'] = etree.tostring(arch, encoding='unicode')
 
-                        _logger.info(f"Successfully added verified fields: {verified_fields}")
+                        _logger.info(f"Successfully added valid fields: {valid_fields}")
                     else:
                         _logger.warning("Could not find suitable insertion point for custom fields")
                 else:
-                    _logger.warning("No verified fields to add to form")
+                    _logger.warning("No valid fields to add to form")
 
         except Exception as e:
             _logger.error(f"Error injecting custom fields: {str(e)}")
 
         return form_view
+
+    # Also update fields_get to ensure dynamic fields are properly exposed
+    @api.model
+    def fields_get(self, allfields=None, attributes=None):
+        """Override fields_get to include dynamic fields in field definitions"""
+        res = super().fields_get(allfields, attributes)
+
+        try:
+            # Add dynamic fields to the fields definition
+            dynamic_fields = self.env['dynamic.field.definition'].search([
+                ('target_model', '=', 'hr.employee'),
+                ('active', '=', True)
+            ])
+
+            for field_def in dynamic_fields:
+                field_name = field_def.name
+                if not allfields or field_name in allfields:
+                    field_info = {
+                        'type': field_def.field_type,
+                        'string': field_def.label,
+                        'required': field_def.required,
+                        'help': field_def.help_text or '',
+                        'readonly': False,
+                        'store': False,
+                        # Add this to identify dynamic fields
+                        'dynamic_field': True,
+                    }
+
+                    # Add selection options if it's a selection field
+                    if field_def.field_type == 'selection' and field_def.selection_options:
+                        options = []
+                        for line in field_def.selection_options.split('\n'):
+                            line = line.strip()
+                            if line:
+                                options.append([line.lower().replace(' ', '_'), line])
+                        field_info['selection'] = options
+
+                    res[field_name] = field_info
+
+        except Exception as e:
+            _logger.error(f"Error in fields_get for dynamic fields: {e}")
+
+        return res
 
     def _get_form_custom_fields(self):
         """Get list of custom fields to add to the form"""
