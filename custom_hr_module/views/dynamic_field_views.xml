@@ -6,7 +6,7 @@
         <field name="model">dynamic.field.definition</field>
         <field name="type">list</field>
         <field name="arch" type="xml">
-            <list string="Dynamic Fields">
+            <list string="Dynamic Fields" create="true" edit="true" delete="true">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="label"/>
@@ -25,24 +25,32 @@
         <field name="arch" type="xml">
             <form string="Dynamic Field Definition">
                 <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="label" placeholder="Field Label"/>
+                        </h1>
+                    </div>
+
                     <group>
-                        <group>
+                        <group string="Basic Information">
                             <field name="name"/>
-                            <field name="label"/>
                             <field name="field_type"/>
                             <field name="target_model"/>
-                        </group>
-                        <group>
-                            <field name="required"/>
-                            <field name="active"/>
                             <field name="sequence"/>
                         </group>
+                        <group string="Settings">
+                            <field name="required"/>
+                            <field name="active"/>
+                        </group>
                     </group>
+
                     <group string="Field Options" invisible="field_type != 'selection'">
-                        <field name="selection_options" placeholder="Option 1&#10;Option 2&#10;Option 3"/>
+                        <field name="selection_options" nolabel="1" placeholder="Option 1&#10;Option 2&#10;Option 3"/>
+                        <p class="text-muted">Enter one option per line for dropdown fields.</p>
                     </group>
-                    <group string="Help">
-                        <field name="help_text" placeholder="Help text for users"/>
+
+                    <group string="Help Text">
+                        <field name="help_text" nolabel="1" placeholder="Help text that will be shown to users"/>
                     </group>
                 </sheet>
             </form>
@@ -64,8 +72,8 @@
 
                     <group>
                         <group string="Basic Information">
-                            <field name="name" placeholder="e.g., employee_level"/>
-                            <field name="label" placeholder="e.g., Employee Level"/>
+                            <field name="name" placeholder="e.g., employee_level" required="1"/>
+                            <field name="label" placeholder="e.g., Employee Level" required="1"/>
                             <field name="target_model"/>
                         </group>
                         <group string="Field Configuration">
@@ -85,9 +93,94 @@
                 </sheet>
                 <footer>
                     <button name="action_create_field" type="object" string="Create Field" class="btn-primary"/>
+                    <button name="action_create_and_continue" type="object" string="Create &amp; Add Another" class="btn-secondary"/>
                     <button string="Cancel" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
+        </field>
+    </record>
+
+    <!-- Server Actions -->
+    <record id="action_add_dynamic_fields" model="ir.actions.server">
+        <field name="name">Add Dynamic Fields to Model</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="state">code</field>
+        <field name="code">
+# Debug dynamic fields first
+records.debug_dynamic_fields()
+
+# Add dynamic fields to the model
+if hasattr(records, '_add_dynamic_fields_to_model'):
+    # Reset the flag to allow re-adding
+    if hasattr(records, '_dynamic_fields_added'):
+        delattr(records, '_dynamic_fields_added')
+    records._add_dynamic_fields_to_model()
+
+# Clear caches
+records.clear_caches()
+
+# Show notification
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Success!',
+        'message': 'Dynamic fields refresh completed! Check the logs for details.',
+        'type': 'success',
+    }
+}
+        </field>
+    </record>
+
+    <record id="action_debug_dynamic_fields" model="ir.actions.server">
+        <field name="name">Debug Dynamic Fields</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="state">code</field>
+        <field name="code">
+# Debug dynamic fields
+records.debug_dynamic_fields()
+
+# Show notification
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Debug Complete!',
+        'message': 'Check the server logs for dynamic fields debug information.',
+        'type': 'info',
+    }
+}
+        </field>
+    </record>
+
+    <record id="action_cleanup_dynamic_fields" model="ir.actions.server">
+        <field name="name">Clean Up Dynamic Fields</field>
+        <field name="model_id" ref="model_dynamic_field_definition"/>
+        <field name="state">code</field>
+        <field name="code">
+# Find fields that don't exist on the model
+hr_employee = env['hr.employee']
+problematic_fields = []
+
+for field_def in records:
+    if field_def.name not in hr_employee._fields:
+        problematic_fields.append(field_def.name)
+
+if problematic_fields:
+    # Show the problematic fields to the user
+    message = f"Found {len(problematic_fields)} fields not properly loaded: {', '.join(problematic_fields)}"
+else:
+    message = "All dynamic fields appear to be properly loaded on the model."
+
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Field Check Complete',
+        'message': message,
+        'type': 'info' if not problematic_fields else 'warning',
+    }
+}
         </field>
     </record>
 
@@ -117,6 +210,7 @@
     <!-- Menu Items -->
     <menuitem id="menu_dynamic_fields_root"
               name="Dynamic Fields"
+              parent="hr.menu_hr_root"
               sequence="100"/>
 
     <menuitem id="menu_dynamic_field_definition"
@@ -147,32 +241,81 @@
         </field>
     </record>
 
-    <!-- Data View for Dynamic Field Data (for debugging) -->
-    <record id="view_dynamic_field_data_tree" model="ir.ui.view">
-        <field name="name">dynamic.field.data.tree</field>
-        <field name="model">dynamic.field.data</field>
+    <!-- Data View for Dynamic Fields Debug - Show JSON storage -->
+    <record id="view_dynamic_fields_debug_tree" model="ir.ui.view">
+        <field name="name">hr.employee.dynamic.debug.tree</field>
+        <field name="model">hr.employee</field>
         <field name="type">list</field>
         <field name="arch" type="xml">
-            <list string="Dynamic Field Data">
-                <field name="model_name"/>
-                <field name="record_id"/>
-                <field name="field_name"/>
-                <field name="field_value"/>
+            <list string="Dynamic Fields Debug" create="false" edit="false" delete="false">
+                <field name="name"/>
+                <field name="dynamic_fields_data" string="Dynamic Fields JSON"/>
             </list>
         </field>
     </record>
 
-    <record id="action_dynamic_field_data" model="ir.actions.act_window">
-        <field name="name">Dynamic Field Data</field>
-        <field name="res_model">dynamic.field.data</field>
+    <record id="action_dynamic_fields_debug" model="ir.actions.act_window">
+        <field name="name">Dynamic Fields Debug</field>
+        <field name="res_model">hr.employee</field>
         <field name="view_mode">list</field>
+        <field name="view_id" ref="view_dynamic_fields_debug_tree"/>
+        <field name="domain">[('dynamic_fields_data', '!=', '{}')]</field>
     </record>
 
-    <menuitem id="menu_dynamic_field_data"
+    <menuitem id="menu_dynamic_fields_debug"
               name="Field Data (Debug)"
               parent="menu_dynamic_fields_root"
-              action="action_dynamic_field_data"
+              action="action_dynamic_fields_debug"
               sequence="30"
               groups="base.group_system"/>
+
+    <!-- Add buttons to tree view -->
+    <record id="view_dynamic_field_definition_tree_enhanced" model="ir.ui.view">
+        <field name="name">dynamic.field.definition.tree.enhanced</field>
+        <field name="model">dynamic.field.definition</field>
+        <field name="inherit_id" ref="view_dynamic_field_definition_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <header>
+                    <button name="%(action_add_dynamic_fields)d"
+                            type="action"
+                            string="Refresh Fields"
+                            class="btn-primary"
+                            groups="hr.group_hr_manager"/>
+                    <button name="%(action_debug_dynamic_fields)d"
+                            type="action"
+                            string="Debug Fields"
+                            class="btn-secondary"
+                            groups="hr.group_hr_manager"/>
+                    <button name="%(action_cleanup_dynamic_fields)d"
+                            type="action"
+                            string="Check Fields"
+                            class="btn-info"
+                            groups="hr.group_hr_manager"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add buttons to employee form header -->
+    <record id="hr_employee_form_inherit_debug_buttons" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.debug.buttons</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="%(action_add_dynamic_fields)d"
+                        type="action"
+                        string="Refresh Dynamic Fields"
+                        class="btn btn-warning"
+                        groups="hr.group_hr_manager"/>
+                <button name="%(action_debug_dynamic_fields)d"
+                        type="action"
+                        string="Debug Fields"
+                        class="btn btn-info"
+                        groups="hr.group_hr_manager"/>
+            </xpath>
+        </field>
+    </record>
 
 </odoo>

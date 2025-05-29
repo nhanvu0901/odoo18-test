@@ -1,5 +1,6 @@
 # models/dynamic_field_definition.py
 from odoo import models, fields, api
+from odoo.exceptions import UserError
 from lxml import etree
 import json
 import logging
@@ -32,6 +33,89 @@ class DynamicFieldDefinition(models.Model):
     active = fields.Boolean('Active', default=True)
     sequence = fields.Integer('Sequence', default=10)
 
+    _sql_constraints = [
+        ('unique_field_name', 'unique(name, target_model)',
+         'Field name must be unique per model!'),
+    ]
+
+    @api.model
+    def create(self, vals):
+        """Override create to refresh target model after creating field"""
+        record = super().create(vals)
+        self._refresh_target_model(vals.get('target_model', 'hr.employee'))
+        self._add_field_to_model(record)
+        return record
+
+    def write(self, vals):
+        """Override write to refresh target model after updating field"""
+        result = super().write(vals)
+        target_models = set()
+
+        # Collect all affected target models
+        for record in self:
+            target_models.add(record.target_model)
+            self._add_field_to_model(record)
+
+        if 'target_model' in vals:
+            target_models.add(vals['target_model'])
+
+        # Refresh all affected models
+        for model_name in target_models:
+            self._refresh_target_model(model_name)
+
+        return result
+
+    def unlink(self):
+        """Override unlink to refresh target model after deleting field"""
+        target_models = set(self.mapped('target_model'))
+        result = super().unlink()
+
+        # Refresh all affected models
+        for model_name in target_models:
+            self._refresh_target_model(model_name)
+
+        return result
+
+    def _add_field_to_model(self, field_record):
+        """Add a single dynamic field to the target model"""
+        try:
+            model_name = field_record.target_model
+            if model_name in self.env.registry:
+                model = self.env[model_name]
+                field_name = field_record.name
+
+                # Skip if field already exists
+                if field_name in model._fields:
+                    return
+
+                # Create the field object
+                field_obj = model._create_dynamic_field_obj(field_record)
+
+                # Add the field to the model
+                model._add_field(field_name, field_obj)
+
+                _logger.info(f"Added dynamic field '{field_name}' to model '{model_name}'")
+
+        except Exception as e:
+            _logger.error(f"Error adding field to model: {e}")
+
+    def _refresh_target_model(self, model_name):
+        """Refresh the target model to clear caches"""
+        try:
+            if model_name in self.env.registry:
+                # Clear the model's field cache
+                model = self.env[model_name]
+                model.clear_caches()
+
+                # Re-add all dynamic fields
+                if hasattr(model, '_add_dynamic_fields_to_model'):
+                    model._add_dynamic_fields_to_model()
+
+                _logger.info(f"Cleared caches for model: {model_name}")
+
+        except Exception as e:
+            _logger.error(f"Error refreshing model {model_name}: {e}")
+
     @api.model
     def get_active_fields_for_model(self, model_name):
         """Get all active dynamic fields for a specific model"""
@@ -40,84 +124,22 @@ class DynamicFieldDefinition(models.Model):
             ('active', '=', True)
         ], order='sequence')
 
+    def action_refresh_model(self):
+        """Manual action to refresh the target model"""
+        for record in self:
+            record._refresh_target_model(record.target_model)
 
-class DynamicFieldData(models.Model):
-    """Model to store dynamic field data"""
-    _name = 'dynamic.field.data'
-    _description = 'Dynamic Field Data Storage'
-
-    record_id = fields.Integer('Record ID', required=True)
-    model_name = fields.Char('Model Name', required=True)
-    field_name = fields.Char('Field Name', required=True)
-    field_value = fields.Text('Field Value')
-
-    _sql_constraints = [
-        ('unique_field_data', 'unique(record_id, model_name, field_name)',
-         'Only one value per field per record allowed!')
-    ]
-
-    @api.model
-    def get_field_value(self, record_id, model_name, field_name):
-        """Get value for a specific dynamic field"""
-        data = self.search([
-            ('record_id', '=', record_id),
-            ('model_name', '=', model_name),
-            ('field_name', '=', field_name)
-        ], limit=1)
-        return data.field_value if data else ''
-
-    @api.model
-    def set_field_value(self, record_id, model_name, field_name, value):
-        """Set value for a specific dynamic field"""
-        data = self.search([
-            ('record_id', '=', record_id),
-            ('model_name', '=', model_name),
-            ('field_name', '=', field_name)
-        ], limit=1)
-
-        if data:
-            data.field_value = str(value) if value else ''
-        else:
-            self.create({
-                'record_id': record_id,
-                'model_name': model_name,
-                'field_name': field_name,
-                'field_value': str(value) if value else ''
-            })
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Success!',
+                'message': 'Model refreshed successfully!',
+                'type': 'success',
+            }
+        }
 
 
-class HrEmployeeInherit(models.Model):
-    _inherit = 'hr.employee'
-
-    # Store all dynamic field values in JSON format
-    dynamic_fields_data = fields.Text('Dynamic Fields Data', default='{}')
-
-    def get_dynamic_field_value(self, field_name):
-        """Get value for a dynamic field"""
-        try:
-            data = json.loads(self.dynamic_fields_data or '{}')
-            return data.get(field_name, '')
-        except:
-            return ''
-
-    def set_dynamic_field_value(self, field_name, value):
-        """Set value for a dynamic field"""
-        try:
-            data = json.loads(self.dynamic_fields_data or '{}')
-            data[field_name] = value
-            self.dynamic_fields_data = json.dumps(data)
-        except:
-            self.dynamic_fields_data = json.dumps({field_name: value})
-
-    def get_dynamic_fields_dict(self):
-        """Get all dynamic fields as dictionary"""
-        try:
-            return json.loads(self.dynamic_fields_data or '{}')
-        except:
-            return {}
-
-
-# wizard/dynamic_field_wizard.py
 class DynamicFieldWizard(models.TransientModel):
     """Wizard to create dynamic fields"""
     _name = 'dynamic.field.wizard'
@@ -146,13 +168,34 @@ class DynamicFieldWizard(models.TransientModel):
     required = fields.Boolean('Required Field', default=False)
     help_text = fields.Text('Help Text')
 
+    @api.onchange('field_type')
+    def _onchange_field_type(self):
+        """Clear selection options when field type is not selection"""
+        if self.field_type != 'selection':
+            self.selection_options = False
+
+    @api.constrains('name')
+    def _check_field_name(self):
+        """Validate field name format"""
+        for record in self:
+            if record.name:
+                # Check for valid Python identifier
+                if not record.name.replace('_', '').isalnum():
+                    raise UserError("Field name can only contain letters, numbers, and underscores")
+
+                if record.name.startswith('_'):
+                    raise UserError("Field name cannot start with underscore")
+
+                if record.name in ['id', 'create_date', 'write_date', 'create_uid', 'write_uid']:
+                    raise UserError("Field name conflicts with system fields")
+
     def action_create_field(self):
         """Create the dynamic field definition"""
-        from odoo.exceptions import UserError
+        self.ensure_one()
 
-        # Validate field name
-        if not self.name.replace('_', '').isalnum():
-            raise UserError("Field name can only contain letters, numbers, and underscores")
+        # Validate selection options for selection fields
+        if self.field_type == 'selection' and not self.selection_options:
+            raise UserError("Selection options are required for dropdown fields")
 
         # Check if field already exists
         existing = self.env['dynamic.field.definition'].search([
@@ -164,7 +207,7 @@ class DynamicFieldWizard(models.TransientModel):
             raise UserError(f"Field '{self.name}' already exists for model '{self.target_model}'")
 
         # Create the field definition
-        self.env['dynamic.field.definition'].create({
+        field_def = self.env['dynamic.field.definition'].create({
             'name': self.name,
             'label': self.label,
             'field_type': self.field_type,
@@ -174,6 +217,7 @@ class DynamicFieldWizard(models.TransientModel):
             'help_text': self.help_text,
         })
 
+        # Return success notification and close wizard
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
@@ -181,5 +225,20 @@ class DynamicFieldWizard(models.TransientModel):
                 'title': 'Success!',
                 'message': f'Dynamic field "{self.label}" created successfully!',
                 'type': 'success',
+            }
+        }
+
+    def action_create_and_continue(self):
+        """Create field and keep wizard open for creating more fields"""
+        self.action_create_field()
+
+        # Clear the form for next field
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'dynamic.field.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_target_model': self.target_model,
             }
         }

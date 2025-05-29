@@ -1,27 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- HR Employee Form View Inheritance -->
+        <!-- HR Employee Form View Inheritance - SAFE VERSION -->
+        <!-- Only includes static fields that we know exist -->
         <record id="hr_employee_form_inherit_school" model="ir.ui.view">
             <field name="name">hr.employee.form.inherit.school</field>
             <field name="model">hr.employee</field>
             <field name="inherit_id" ref="hr.view_employee_form"/>
             <field name="arch" type="xml">
-                <!-- Add to the main information group -->
-                <xpath expr="//page[@name='public']//div[@id='o_work_employee_main']" position="inside">
-                    <group string="Additional Information">
-                        <field name="text"/>
-                    </group>
-                </xpath>
-
-                <!-- Alternative: Add to a new page in the notebook -->
+                <!-- Add static field to new page -->
                 <xpath expr="//notebook" position="inside">
                     <page string="Additional Information" name="additional_info">
                         <group>
-                            <group>
+                            <group string="Static Fields">
                                 <field name="text"/>
                             </group>
                         </group>
+                        <div class="alert alert-info mt-3" role="alert">
+                            <h5><i class="fa fa-info-circle"/> Dynamic Fields Information</h5>
+                            <p><strong>Dynamic fields are automatically added to this form.</strong></p>
+                            <p>If you don't see newly created dynamic fields:</p>
+                            <ul>
+                                <li>Use the <strong>"Refresh Dynamic Fields"</strong> button above</li>
+                                <li>Or go to <strong>Dynamic Fields &gt; Manage Fields</strong> and click <strong>"Refresh Fields"</strong></li>
+                            </ul>
+                        </div>
                     </page>
                 </xpath>
             </field>
