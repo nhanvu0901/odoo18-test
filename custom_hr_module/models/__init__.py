@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
 
-
-from . import dynamic_field_definition
-from . import  inherit
+from . import inherit
+from . import res_config_settings

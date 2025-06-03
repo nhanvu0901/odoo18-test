@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_employee_form_inherit" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <field name="work_email" position="after">
+                <field name="employee_id_prefix"
+                       placeholder="e.g., EMP, DEV, HR"
+                       help="Only HR managers can edit this field"/>
+                <field name="employee_id"
+                       help="Auto-generated: Prefix + Employee Database ID (e.g., EMP123)"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_employee_tree_inherit" model="ir.ui.view">
+        <field name="name">hr.employee.tree.inherit</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_tree"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="employee_id" optional="show"/>
+                <field name="employee_id_prefix" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_employee_search_inherit" model="ir.ui.view">
+        <field name="name">hr.employee.search.inherit</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_filter"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="employee_id"/>
+                <field name="employee_id_prefix"/>
+            </field>
+            <filter name="group_category_ids" position="after">
+                <filter name="group_prefix" string="ID Prefix" domain="[]" context="{'group_by': 'employee_id_prefix'}"/>
+            </filter>
+        </field>
+    </record>
+</odoo>
