@@ -21,14 +21,26 @@ class HrEmployee(models.Model):
         string='ID Prefix',
         size=10,
         help='Prefix for the employee ID (e.g., EMP, DEV, HR)',
-        groups="hr.group_hr_manager"  # Only HR managers can edit
     )
 
     @api.depends('employee_id_prefix')
     def _compute_employee_id(self):
         """Compute employee_id based on prefix and database ID"""
         for record in self:
-            if record.id:  # Make sure record has an ID
+            # Handle different ID types: regular ID, NewId, or no ID
+            record_id = None
+
+            if hasattr(record.id, 'origin') and record.id.origin:
+                # This is a NewId object with an origin
+                record_id = record.id.origin
+            elif isinstance(record.id, int) and record.id > 0:
+                # This is a regular database ID
+                record_id = record.id
+            elif hasattr(record, '_origin') and record._origin.id:
+                # Try to get ID from the original record
+                record_id = record._origin.id
+
+            if record_id:
                 prefix = record.employee_id_prefix or self._get_default_prefix()
                 # Clean the prefix (remove non-alphanumeric characters except underscore)
                 prefix = re.sub(r'[^A-Za-z0-9_]', '', prefix).upper()
@@ -37,20 +49,23 @@ class HrEmployee(models.Model):
                 number_format = self._get_number_format()
                 try:
                     if number_format == '{}':
-                        formatted_number = str(record.id)
+                        formatted_number = str(record_id)
                     else:
-                        formatted_number = number_format.format(record.id)
+                        formatted_number = number_format.format(record_id)
                     record.employee_id = f"{prefix}{formatted_number}"
                 except (ValueError, TypeError) as e:
                     _logger.error(
                         "Error formatting employee ID number %s with format '%s': %s. Using default format.",
-                        record.id, number_format, str(e)
+                        record_id, number_format, str(e)
                     )
                     # Fallback to default 3-digit format
-                    formatted_number = "{:03d}".format(record.id)
+                    formatted_number = "{:03d}".format(record_id)
                     record.employee_id = f"{prefix}{formatted_number}"
             else:
-                record.employee_id = False
+                # For completely new records without any ID, show a placeholder
+                prefix = record.employee_id_prefix or self._get_default_prefix()
+                prefix = re.sub(r'[^A-Za-z0-9_]', '', prefix).upper()
+                record.employee_id = f"{prefix}---"
 
     def _search_employee_id(self, operator, value):
         """Enable search functionality for computed employee_id field"""
@@ -66,12 +81,11 @@ class HrEmployee(models.Model):
                 elif operator == '!=' and computed_id != value:
                     matching_ids.append(employee.id)
                 elif operator in ('like', 'ilike'):
-                    if operator == 'like':
-                        if value.lower() in computed_id.lower():
-                            matching_ids.append(employee.id)
-                    else:  # ilike
-                        if value.lower() in computed_id.lower():
-                            matching_ids.append(employee.id)
+                    # Odoo's 'like' is case-sensitive, 'ilike' is case-insensitive
+                    # For simplicity here, making both case-insensitive,
+                    # or adjust if specific SQL-like behavior is needed.
+                    if value.lower() in computed_id.lower():
+                        matching_ids.append(employee.id)
                 elif operator == 'in' and computed_id in value:
                     matching_ids.append(employee.id)
                 elif operator == 'not in' and computed_id not in value:
@@ -120,3 +134,6 @@ class HrEmployee(models.Model):
                     raise ValidationError(
                         _("Prefix cannot be longer than 10 characters")
                     )
+
+
+
