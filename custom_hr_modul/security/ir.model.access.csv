@@ -1,6 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_dynamic_field_definition_hr_manager,dynamic.field.definition hr manager,model_dynamic_field_definition,hr.group_hr_manager,1,1,1,1
-access_dynamic_field_definition_hr_user,dynamic.field.definition hr user,model_dynamic_field_definition,hr.group_hr_user,1,0,0,0
-access_dynamic_field_definition_user,dynamic.field.definition user,model_dynamic_field_definition,base.group_user,1,0,0,0
-access_dynamic_field_wizard_hr_manager,dynamic.field.wizard hr manager,model_dynamic_field_wizard,hr.group_hr_manager,1,1,1,1
-access_dynamic_field_wizard_hr_user,dynamic.field.wizard hr user,model_dynamic_field_wizard,hr.group_hr_user,1,1,1,0

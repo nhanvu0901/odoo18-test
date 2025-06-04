@@ -6,12 +6,16 @@
         <field name="arch" type="xml">
             <block name="employees_setting_container" position="inside">
                 <setting id="employee_id_format_setting"
-                         help="Configure automatic employee ID generation. IDs will be: Prefix + Employee Database ID"
+                         help="Configure automatic employee ID generation. IDs will be: Prefix + Employee Database ID + Suffix"
                          string="Employee ID Format">
                     <div class="content-group">
                         <div class="row mt16">
                             <label class="col-lg-3 o_light_label" for="employee_prefix_default" string="Default Prefix"/>
                             <field name="employee_prefix_default" placeholder="EMP"/>
+                        </div>
+                        <div class="row">
+                            <label class="col-lg-3 o_light_label" for="employee_suffix_default" string="Default Suffix"/>
+                            <field name="employee_suffix_default" placeholder="(optional)"/>
                         </div>
                         <div class="row">
                             <label class="col-lg-3 o_light_label" for="employee_number_format" string="Number Format"/>
@@ -20,8 +24,8 @@
                         <div class="row">
                             <div class="col-lg-9 offset-lg-3">
                                 <small class="text-muted">
-                                    Employee IDs will be generated as: [Prefix][Formatted Employee Database ID]<br/>
-                                    Example: EMP001 (where 001 is the formatted employee's database ID)
+                                    Employee IDs will be generated as: [Prefix][Formatted Employee Database ID][Suffix]<br/>
+                                    Example: EMP001HR (where 001 is the formatted employee's database ID)
                                 </small>
                             </div>
                         </div>
