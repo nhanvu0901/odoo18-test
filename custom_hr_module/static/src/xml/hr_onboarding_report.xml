@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
-    <t t-name="hr_onboarding_report.HROnboardingReportTemplate">
+    <t t-name="custom_hr_module.HROnboardingReportTemplate">
         <div class="hr-onboarding-report o_content">
             <div class="report-header mb-3">
                 <h2>HR Onboarding/Offboarding Report</h2>
