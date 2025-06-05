@@ -18,16 +18,22 @@ Long description of module's purpose
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'hr'],
+    'depends': ['base', 'hr', 'web'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
         'views/hr_employee_views.xml',
         'views/res_config_settings.xml',
+        'views/hr_onboarding_report_views.xml',
+        'views/hr_onboarding_report_menu.xml',
     ],
-    # only loaded in demonstration mode
-    'demo': [
-        'demo/demo.xml',
-    ],
+    'assets': {
+        'web.assets_backend': [
+            'custom_hr_module/static/src/js/hr_onboarding_report.js',
+            'custom_hr_module/static/src/css/hr_onboarding_report.css',
+            'custom_hr_module/static/src/xml/hr_onboarding_report.xml',
+        ],
+    },
+
 }
